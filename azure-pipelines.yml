@@ -1,0 +1,57 @@
+trigger:
+- main
+- rc
+- feature
+# User defined parameters
+variables:
+  - group: Cloning-AccessToken
+  - name: project
+    value: common
+
+stages:
+  - stage: Mirror_to_Target
+    jobs:
+    - job: MirrorToTarget
+      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+      pool:
+        name: 'DockerAgents'
+      steps:
+        - bash: |
+            echo username: $(clone.username)
+            git config --global user.name $(clone.username)
+            git config --global user.email $(clone.useremail)
+            git config --global credential.authority basic
+            git config --global http.sslVerify "false"
+            # the personal account token is defined as pipeline variable encrypted
+            B64_PAT=$(printf "%s"":$(clone.access.token)" | base64)
+            OriginRepo="https://$(clone.org)@dev.azure.com/$(clone.org)/$(clone.source.project)/_git/$(project)"
+            TargetRepo="https://$(clone.org)@dev.azure.com/$(clone.org)/$(clone.dest.project)/_git/$(project)"
+            echo Mirroring repo \"${OriginRepo}\" to \"${TargetRepo}\"
+            git -c http.extraHeader="Authorization: Basic ${B64_PAT}" clone --bare ${OriginRepo} originRepoName.git || exit 1
+            echo "git clone done"
+            cd originRepoName.git || exit 1
+            git -c http.extraHeader="Authorization: Basic ${B64_PAT}" push --mirror ${TargetRepo} || exit 1
+            echo "git mirror done"
+            cd ..
+            rm -rf originRepoName.git
+          displayName: 'Mirror the repo from the Origin project to the ${clone.dest.project} project'
+        - bash: |
+            echo username: $(clone.username)
+            git config --global user.name $(clone.username)
+            git config --global user.email $(clone.useremail)
+            git config --global credential.authority basic
+            git config --global http.sslVerify "false"
+            # the personal account token is defined as pipeline variable encrypted
+            B64_PAT=$(printf "%s"":$(clone.access.token)" | base64)
+            OriginRepo="https://$(clone.org)@dev.azure.com/$(clone.org)/$(clone.source.project)/_git/$(project)"
+            TargetRepo="https://$(clone.org)@dev.azure.com/$(clone.org)/$(clone.legacy.dest.project)/_git/$(project)"
+            echo Mirroring repo \"${OriginRepo}\" to \"${TargetRepo}\"
+            git -c http.extraHeader="Authorization: Basic ${B64_PAT}" clone --bare ${OriginRepo} originRepoName.git || exit 1
+            echo "git clone done"
+            cd originRepoName.git || exit 1
+            git -c http.extraHeader="Authorization: Basic ${B64_PAT}" push --mirror ${TargetRepo} || exit 1
+            echo "git mirror done"
+            cd ..
+            rm -rf originRepoName.git
+          displayName: 'Mirror the repo from the Origin project to the ${clone.legacy.dest.project} project'

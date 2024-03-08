@@ -1,0 +1,42 @@
+﻿syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package Econolite.Ode.Monitoring.Events.Messaging;
+
+message UUID {
+    string value = 1;
+}
+
+enum LogName {
+    LOG_NAME_UNKNOWN = 0;
+    SYSTEM_EVENT = 1;
+    AUDIT = 2;
+}
+
+enum EventLevel {
+    EVENT_LEVEL_UNKNOWN = 0;
+    DEBUG = 1;
+    INFORMATION = 2;
+    WARNING = 3;
+    ERROR = 4;
+    CRITICAL = 5;
+}
+
+enum Category {
+    CATEGORY_UNKNOWN = 0;
+    SERVER = 1;
+    OPERATIONAL = 2;
+    USER = 3;
+}
+
+message UserEventMessage {
+    LogName log_name = 1;
+    string source = 2;
+    UUID tenant_id = 3;
+    EventLevel Level = 4;
+    optional google.protobuf.Timestamp logged = 5;
+    Category category = 6;
+    string computer = 7;
+    string details = 8;
+}
